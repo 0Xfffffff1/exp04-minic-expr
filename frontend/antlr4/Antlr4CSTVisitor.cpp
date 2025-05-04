@@ -306,8 +306,20 @@ std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)
     if (ctx->T_DIGIT()) {
         // 无符号整型字面量
         // 识别 primaryExp: T_DIGIT
+        std::string text = ctx->T_DIGIT()->getText();
+        uint32_t val;
 
-        uint32_t val = (uint32_t) stoull(ctx->T_DIGIT()->getText());
+        if (text.length() >= 2 && (text.substr(0, 2) == "0x" || text.substr(0, 2) == "0X")) {
+            // 16进制
+            val = (uint32_t) stoull(text.substr(2), nullptr, 16);
+        } else if (text.length() >= 1 && text[0] == '0' && text.length() > 1) {
+            // 8进制
+            val = (uint32_t) stoull(text.substr(1), nullptr, 8);
+        } else {
+            // 10进制
+            val = (uint32_t) stoull(text, nullptr, 10);
+        }
+
         int64_t lineNo = (int64_t) ctx->T_DIGIT()->getSymbol()->getLine();
         node = ast_node::New(digit_int_attr{val, lineNo});
     } else if (ctx->lVal()) {
