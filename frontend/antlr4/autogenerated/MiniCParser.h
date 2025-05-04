@@ -1,5 +1,5 @@
 
-// Generated from MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/exp04-minic-expr/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -21,7 +21,7 @@ public:
     RuleCompileUnit = 0, RuleFuncDef = 1, RuleBlock = 2, RuleBlockItemList = 3, 
     RuleBlockItem = 4, RuleVarDecl = 5, RuleBasicType = 6, RuleVarDef = 7, 
     RuleStatement = 8, RuleExpr = 9, RuleAddExp = 10, RuleAddOp = 11, RuleUnaryExp = 12, 
-    RulePrimaryExp = 13, RuleRealParamList = 14, RuleLVal = 15
+    RuleUnaryOp = 13, RulePrimaryExp = 14, RuleRealParamList = 15, RuleLVal = 16
   };
 
   explicit MiniCParser(antlr4::TokenStream *input);
@@ -54,6 +54,7 @@ public:
   class AddExpContext;
   class AddOpContext;
   class UnaryExpContext;
+  class UnaryOpContext;
   class PrimaryExpContext;
   class RealParamListContext;
   class LValContext; 
@@ -288,6 +289,8 @@ public:
     antlr4::tree::TerminalNode *T_L_PAREN();
     antlr4::tree::TerminalNode *T_R_PAREN();
     RealParamListContext *realParamList();
+    UnaryOpContext *unaryOp();
+    UnaryExpContext *unaryExp();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -295,6 +298,19 @@ public:
   };
 
   UnaryExpContext* unaryExp();
+
+  class  UnaryOpContext : public antlr4::ParserRuleContext {
+  public:
+    UnaryOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *T_SUB();
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  UnaryOpContext* unaryOp();
 
   class  PrimaryExpContext : public antlr4::ParserRuleContext {
   public:

@@ -1,5 +1,5 @@
 
-// Generated from MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/exp04-minic-expr/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -76,6 +76,10 @@ public:
   }
 
   virtual std::any visitUnaryExp(MiniCParser::UnaryExpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitUnaryOp(MiniCParser::UnaryOpContext *ctx) override {
     return visitChildren(ctx);
   }
 

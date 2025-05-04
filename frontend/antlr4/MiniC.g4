@@ -51,7 +51,13 @@ addExp: unaryExp (addOp unaryExp)*;
 addOp: T_ADD | T_SUB;
 
 // 一元表达式
-unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
+unaryExp:
+	primaryExp
+	| T_ID T_L_PAREN realParamList? T_R_PAREN
+	| unaryOp unaryExp;
+
+// 一元运算符
+unaryOp: T_SUB;
 
 // 基本表达式：括号表达式、整数、左值表达式
 primaryExp: T_L_PAREN expr T_R_PAREN | T_DIGIT | lVal;

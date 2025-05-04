@@ -271,13 +271,12 @@ std::any MiniCCSTVisitor::visitAddOp(MiniCParser::AddOpContext * ctx)
 
 std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
 {
-    // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
+    // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN | unaryOp unaryExp;
 
     if (ctx->primaryExp()) {
         // 普通表达式
         return visitPrimaryExp(ctx->primaryExp());
     } else if (ctx->T_ID()) {
-
         // 创建函数调用名终结符节点
         ast_node * funcname_node = ast_node::New(ctx->T_ID()->getText(), (int64_t) ctx->T_ID()->getSymbol()->getLine());
 
@@ -292,9 +291,23 @@ std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
 
         // 创建函数调用节点，其孩子为被调用函数名和实参，
         return create_func_call(funcname_node, paramListNode);
-    } else {
-        return nullptr;
+    } else if (ctx->unaryOp()) {
+        // 单目运算符
+        auto op = std::any_cast<ast_operator_type>(visitUnaryOp(ctx->unaryOp()));
+        auto expr = std::any_cast<ast_node *>(visitUnaryExp(ctx->unaryExp()));
+        return create_contain_node(op, expr);
     }
+
+    return nullptr;
+}
+
+std::any MiniCCSTVisitor::visitUnaryOp(MiniCParser::UnaryOpContext * ctx)
+{
+    // 识别文法产生式：unaryOp: T_SUB;
+    if (ctx->T_SUB()) {
+        return ast_operator_type::AST_OP_UNARY_MINUS;
+    }
+    return ast_operator_type::AST_OP_MAX;
 }
 
 std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)

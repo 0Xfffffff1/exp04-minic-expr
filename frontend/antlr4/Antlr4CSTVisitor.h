@@ -160,4 +160,11 @@ protected:
     /// @return std::any AST的节点
     ///
     std::any visitExpressionStatement(MiniCParser::ExpressionStatementContext * context) override;
+
+    ///
+    /// @brief 非终结符UnaryOp的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    ///
+    std::any visitUnaryOp(MiniCParser::UnaryOpContext * ctx) override;
 };

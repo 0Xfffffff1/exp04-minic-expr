@@ -20,6 +20,9 @@
 
 #include "AST.h"
 #include "Module.h"
+#include "Value.h"
+#include "Instructions/BinaryInstruction.h"
+#include "Values/ConstInt.h"
 
 /// @brief AST遍历产生线性IR类
 class IRGenerator {
@@ -71,6 +74,11 @@ protected:
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_sub(ast_node * node);
+
+    /// @brief 单目负运算符AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_unary_minus(ast_node * node);
 
     /// @brief 赋值AST节点翻译成线性中间IR
     /// @param node AST节点

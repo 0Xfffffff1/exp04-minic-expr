@@ -47,6 +47,7 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     /* 表达式运算， 加减 */
     ast2ir_handlers[ast_operator_type::AST_OP_SUB] = &IRGenerator::ir_sub;
     ast2ir_handlers[ast_operator_type::AST_OP_ADD] = &IRGenerator::ir_add;
+    ast2ir_handlers[ast_operator_type::AST_OP_UNARY_MINUS] = &IRGenerator::ir_unary_minus;
 
     /* 语句 */
     ast2ir_handlers[ast_operator_type::AST_OP_ASSIGN] = &IRGenerator::ir_assign;
@@ -611,6 +612,46 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
     // TODO 这里可强化类型等检查
 
     node->val = module->newVarValue(node->sons[0]->type, node->sons[1]->name);
+
+    return true;
+}
+
+/// @brief 单目负运算符AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_unary_minus(ast_node * node)
+{
+    ast_node * operand_node = node->sons[0];
+
+    // 先计算操作数
+    ast_node * operand = ir_visit_ast_node(operand_node);
+    if (!operand) {
+        // 操作数计算失败
+        return false;
+    }
+
+    // 如果操作数是常量，直接计算结果
+    if (auto constInt = dynamic_cast<ConstInt *>(operand->val)) {
+        int32_t val = constInt->getVal();
+        node->val = module->newConstInt(-val);
+        return true;
+    }
+
+    // 创建一个常量0
+    auto zero = new ConstInt(0);
+
+    // 创建减法指令：0 - operand
+    BinaryInstruction * subInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                        IRInstOperator::IRINST_OP_SUB_I,
+                                                        zero,
+                                                        operand->val,
+                                                        IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(operand->blockInsts);
+    node->blockInsts.addInst(subInst);
+
+    node->val = subInst;
 
     return true;
 }
