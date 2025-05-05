@@ -49,6 +49,9 @@ InstSelectorArm32::InstSelectorArm32(vector<Instruction *> & _irCode,
 
     translator_handlers[IRInstOperator::IRINST_OP_ADD_I] = &InstSelectorArm32::translate_add_int32;
     translator_handlers[IRInstOperator::IRINST_OP_SUB_I] = &InstSelectorArm32::translate_sub_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_MUL_I] = &InstSelectorArm32::translate_mul_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_DIV_I] = &InstSelectorArm32::translate_div_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_MOD_I] = &InstSelectorArm32::translate_mod_int32;
 
     translator_handlers[IRInstOperator::IRINST_OP_FUNC_CALL] = &InstSelectorArm32::translate_call;
     translator_handlers[IRInstOperator::IRINST_OP_ARG] = &InstSelectorArm32::translate_arg;
@@ -301,6 +304,27 @@ void InstSelectorArm32::translate_add_int32(Instruction * inst)
 void InstSelectorArm32::translate_sub_int32(Instruction * inst)
 {
     translate_two_operator(inst, "sub");
+}
+
+/// @brief 整数乘法指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_mul_int32(Instruction * inst)
+{
+    translate_two_operator(inst, "mul");
+}
+
+/// @brief 整数除法指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_div_int32(Instruction * inst)
+{
+    translate_two_operator(inst, "div");
+}
+
+/// @brief 整数求余指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_mod_int32(Instruction * inst)
+{
+    translate_two_operator(inst, "mod");
 }
 
 /// @brief 函数调用指令翻译成ARM32汇编

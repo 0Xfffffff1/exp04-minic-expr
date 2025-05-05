@@ -45,10 +45,16 @@ statement:
 expr: addExp;
 
 // 加减表达式
-addExp: unaryExp (addOp unaryExp)*;
+addExp: mulExp (addOp mulExp)*;
 
 // 加减运算符
 addOp: T_ADD | T_SUB;
+
+// 乘法表达式
+mulExp: unaryExp (mulOp unaryExp)*;
+
+// 乘法运算符
+mulOp: T_MUL | T_DIV | T_MOD;
 
 // 一元表达式
 unaryExp:
@@ -81,6 +87,9 @@ T_COMMA: ',';
 
 T_ADD: '+';
 T_SUB: '-';
+T_MUL: '*';
+T_DIV: '/';
+T_MOD: '%';
 
 // 要注意关键字同样也属于T_ID，因此必须放在T_ID的前面，否则会识别成T_ID
 T_RETURN: 'return';

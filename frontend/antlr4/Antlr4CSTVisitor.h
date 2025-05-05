@@ -167,4 +167,18 @@ protected:
     /// @return std::any AST的节点
     ///
     std::any visitUnaryOp(MiniCParser::UnaryOpContext * ctx) override;
+
+    ///
+    /// @brief 非终结符MulExp的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    ///
+    std::any visitMulExp(MiniCParser::MulExpContext * ctx) override;
+
+    ///
+    /// @brief 非终结符mulOp的分析
+    /// @param ctx CST上下文
+    /// @return std::any 类型
+    ///
+    std::any visitMulOp(MiniCParser::MulOpContext * ctx) override;
 };

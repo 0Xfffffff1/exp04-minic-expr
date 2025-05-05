@@ -221,12 +221,12 @@ std::any MiniCCSTVisitor::visitBlockStatement(MiniCParser::BlockStatementContext
 
 std::any MiniCCSTVisitor::visitAddExp(MiniCParser::AddExpContext * ctx)
 {
-    // 识别的文法产生式：addExp : unaryExp (addOp unaryExp)*;
+    // 识别的文法产生式：addExp : mulExp (addOp mulExp)*;
 
     if (ctx->addOp().empty()) {
 
-        // 没有addOp运算符，则说明闭包识别为0，只识别了第一个非终结符unaryExp
-        return visitUnaryExp(ctx->unaryExp()[0]);
+        // 没有addOp运算符，则说明闭包识别为0，只识别了第一个非终结符mulExp
+        return visitMulExp(ctx->mulExp()[0]);
     }
 
     ast_node *left, *right;
@@ -243,6 +243,45 @@ std::any MiniCCSTVisitor::visitAddExp(MiniCParser::AddExpContext * ctx)
         if (k == 0) {
 
             // 左操作数
+            left = std::any_cast<ast_node *>(visitMulExp(ctx->mulExp()[k]));
+        }
+
+        // 右操作数
+        right = std::any_cast<ast_node *>(visitMulExp(ctx->mulExp()[k + 1]));
+
+        // 新建结点作为下一个运算符的右操作符
+        left = ast_node::New(op, left, right, nullptr);
+    }
+
+    return left;
+}
+
+/// @brief 非终结运算符mulExp的遍历
+/// @param ctx CST上下文
+std::any MiniCCSTVisitor::visitMulExp(MiniCParser::MulExpContext * ctx)
+{
+    // 识别的文法产生式：mulExp : unaryExp (mulOp unaryExp)*;
+
+    if (ctx->mulOp().empty()) {
+
+        // 没有mulOp运算符，则说明闭包识别为0，只识别了第一个非终结符unaryExp
+        return visitUnaryExp(ctx->unaryExp()[0]);
+    }
+
+    ast_node *left, *right;
+
+    // 存在mulOp运算符
+    auto opsCtxVec = ctx->mulOp();
+
+    // 有操作符，肯定会进循环，使得right设置正确的值
+    for (int k = 0; k < (int) opsCtxVec.size(); k++) {
+
+        // 获取运算符
+        ast_operator_type op = std::any_cast<ast_operator_type>(visitMulOp(opsCtxVec[k]));
+
+        if (k == 0) {
+
+            // 左操作数
             left = std::any_cast<ast_node *>(visitUnaryExp(ctx->unaryExp()[k]));
         }
 
@@ -254,6 +293,23 @@ std::any MiniCCSTVisitor::visitAddExp(MiniCParser::AddExpContext * ctx)
     }
 
     return left;
+}
+
+/// @brief 非终结运算符mulOp的遍历
+/// @param ctx CST上下文
+std::any MiniCCSTVisitor::visitMulOp(MiniCParser::MulOpContext * ctx)
+{
+    // 识别的文法产生式：mulOp : T_MUL | T_DIV | T_MOD
+
+    if (ctx->T_MUL()) {
+        return ast_operator_type::AST_OP_MUL;
+    } else if (ctx->T_DIV()) {
+        return ast_operator_type::AST_OP_DIV;
+    } else if (ctx->T_MOD()) {
+        return ast_operator_type::AST_OP_MOD;
+    }
+
+    return ast_operator_type::AST_OP_MAX;
 }
 
 /// @brief 非终结运算符addOp的遍历
