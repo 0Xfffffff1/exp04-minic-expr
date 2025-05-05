@@ -28,6 +28,7 @@
 #include "GotoInstruction.h"
 #include "FuncCallInstruction.h"
 #include "MoveInstruction.h"
+#include "Values/ConstInt.h"
 
 /// @brief 构造函数
 /// @param _irCode 指令
@@ -303,7 +304,58 @@ void InstSelectorArm32::translate_add_int32(Instruction * inst)
 /// @param inst IR指令
 void InstSelectorArm32::translate_sub_int32(Instruction * inst)
 {
+    Value * arg1 = inst->getOperand(0);
+
+    // 检查是否是单目负运算模式：0 - operand
+    if (auto constInt = dynamic_cast<ConstInt *>(arg1)) {
+        if (constInt->getVal() == 0) {
+            // 这是单目负运算，使用专门的翻译方法
+            translate_unary_minus(inst);
+            return;
+        }
+    }
+
+    // 常规二元减法
     translate_two_operator(inst, "sub");
+}
+
+/// @brief 单目负运算指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_unary_minus(Instruction * inst)
+{
+    Value * result = inst;
+    Value * operand = inst->getOperand(1); // 第二个操作数才是要取负的值
+
+    int32_t operand_reg_no = operand->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_operand_reg_no;
+
+    // 加载操作数到寄存器
+    if (operand_reg_no == -1) {
+        load_operand_reg_no = simpleRegisterAllocator.Allocate(operand);
+        iloc.load_var(load_operand_reg_no, operand);
+    } else {
+        load_operand_reg_no = operand_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 使用ARM的RSB指令：Reverse Subtract，结果 = 0 - 操作数
+    iloc.inst("rsb", PlatformArm32::regName[load_result_reg_no], PlatformArm32::regName[load_operand_reg_no], "#0");
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(operand);
+    simpleRegisterAllocator.free(result);
 }
 
 /// @brief 整数乘法指令翻译成ARM32汇编
