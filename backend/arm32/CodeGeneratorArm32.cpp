@@ -217,9 +217,6 @@ void CodeGeneratorArm32::registerAllocation(Function * func)
     if (func->getExistFuncCall()) {
         protectedRegNo.push_back(ARM32_LX_REG_NO);
     }
-    
-    // 保护R10寄存器用于立即数过大时的寻址
-    protectedRegNo.push_back(ARM32_TMP_REG_NO);
 
     // 调整函数调用指令，主要是前四个寄存器传值，后面用栈传递
     // 为了更好的进行寄存器分配，可以进行对函数调用的指令进行预处理
