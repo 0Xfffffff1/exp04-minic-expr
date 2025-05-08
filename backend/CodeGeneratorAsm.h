@@ -23,7 +23,7 @@ class CodeGeneratorAsm : public CodeGenerator {
 
 protected:
     /// @brief .text代码段，主要存放CPU指令，以函数为单位
-    void genCodeSection(FILE * fp);
+    void genCodeSection();
 
 public:
     /// @brief 构造函数
@@ -50,9 +50,6 @@ protected:
     /// @brief 产生汇编文件
     /// @return true:成功，false:失败
     bool run() override;
-
-    /// @brief 汇编指令生成，放到.text代码段中
-    void genCodeSection();
 
     ///
     /// @brief Label索引编号，要求文件级别的编号，而不是函数级别的编号

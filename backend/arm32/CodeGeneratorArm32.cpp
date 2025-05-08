@@ -51,31 +51,38 @@ void CodeGeneratorArm32::genHeader()
 /// @brief 全局变量Section，主要包含初始化的和未初始化过的
 void CodeGeneratorArm32::genDataSection()
 {
-    // 生成代码段
-    fprintf(fp, ".text\n");
-
-    // 可直接操作文件指针fp进行写操作
-
-    // 目前不支持全局变量和静态变量，以及字符串常量
-    // 全局变量分两种情况：初始化的全局变量和未初始化的全局变量
-    // TODO 这里先处理未初始化的全局变量
+    // 处理未初始化的全局变量（.bss段）
+    bool hasBSS = false;
     for (auto var: module->getGlobalVariables()) {
-
         if (var->isInBSSSection()) {
-
+            if (!hasBSS) {
+                fprintf(fp, ".bss\n");
+                hasBSS = true;
+            }
             // 在BSS段的全局变量，可以包含初值全是0的变量
             fprintf(fp, ".comm %s, %d, %d\n", var->getName().c_str(), var->getType()->getSize(), var->getAlignment());
-        } else {
+        }
+    }
 
+    // 处理已初始化的全局变量（.data段）
+    bool hasData = false;
+    for (auto var: module->getGlobalVariables()) {
+        if (!var->isInBSSSection()) {
+            if (!hasData) {
+                fprintf(fp, ".data\n");
+                hasData = true;
+            }
             // 有初值的全局变量
             fprintf(fp, ".global %s\n", var->getName().c_str());
-            fprintf(fp, ".data\n");
             fprintf(fp, ".align %d\n", var->getAlignment());
             fprintf(fp, ".type %s, %%object\n", var->getName().c_str());
-            fprintf(fp, "%s\n", var->getName().c_str());
+            fprintf(fp, "%s:\n", var->getName().c_str());
             // TODO 后面设置初始化的值，具体请参考ARM的汇编
         }
     }
+
+    // 生成代码段
+    fprintf(fp, ".text\n");
 }
 
 ///
@@ -94,7 +101,7 @@ void CodeGeneratorArm32::getIRValueStr(Value * val, std::string & str)
     if (name.empty() && (!IRName.empty())) {
         showName = IRName;
     } else if ((!name.empty()) && IRName.empty()) {
-        showName = IRName;
+        showName = name;
     } else if ((!name.empty()) && (!IRName.empty())) {
         showName = name + ":" + IRName;
     } else {
@@ -197,11 +204,22 @@ void CodeGeneratorArm32::registerAllocation(Function * func)
     // 至少有FP和LX寄存器需要保护
     std::vector<int32_t> & protectedRegNo = func->getProtectedReg();
     protectedRegNo.clear();
-    protectedRegNo.push_back(ARM32_TMP_REG_NO);
+    
+    // 保护R4-R10寄存器
+    for (int i = 4; i <= 10; i++) {
+        protectedRegNo.push_back(i);
+    }
+    
+    // 保护FP寄存器(R11)
     protectedRegNo.push_back(ARM32_FP_REG_NO);
+    
+    // 如果函数有函数调用，需要保护LR寄存器(R14)
     if (func->getExistFuncCall()) {
         protectedRegNo.push_back(ARM32_LX_REG_NO);
     }
+    
+    // 保护R10寄存器用于立即数过大时的寻址
+    protectedRegNo.push_back(ARM32_TMP_REG_NO);
 
     // 调整函数调用指令，主要是前四个寄存器传值，后面用栈传递
     // 为了更好的进行寄存器分配，可以进行对函数调用的指令进行预处理
@@ -214,14 +232,6 @@ void CodeGeneratorArm32::registerAllocation(Function * func)
     // 函数形参要求前四个寄存器分配，后面的参数采用栈传递，实现实参的值传递给形参
     // 这一步是必须的
     adjustFormalParamInsts(func);
-
-#if 0
-    // 临时输出调整后的IR指令，用于查看当前的寄存器分配、栈内变量分配、实参入栈等信息的正确性
-    std::string irCodeStr;
-    func->renameIR();
-    func->toString(irCodeStr);
-    std::cout << irCodeStr << std::endl;
-#endif
 }
 
 /// @brief 寄存器分配前对函数内的指令进行调整，以便方便寄存器分配
