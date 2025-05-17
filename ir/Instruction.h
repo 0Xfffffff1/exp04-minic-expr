@@ -85,6 +85,9 @@ enum class IRInstOperator : std::int8_t {
     /// @brief 逻辑运算符：非
     IRINST_OP_NOT_I,
 
+    /// @brief 整数比较指令
+    IRINST_OP_ICMP,
+
     /* 后续可追加其他的IR指令 */
 
     /// @brief 最大指令码，也是无效指令

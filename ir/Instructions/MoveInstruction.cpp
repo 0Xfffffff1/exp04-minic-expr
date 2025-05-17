@@ -39,5 +39,5 @@ void MoveInstruction::toString(std::string & str)
 
     Value *dstVal = getOperand(0), *srcVal = getOperand(1);
 
-    str = dstVal->getIRName() + " = " + srcVal->getIRName();
+    str = dstVal->getIRName() + "= " + srcVal->getIRName() + " ;";
 }

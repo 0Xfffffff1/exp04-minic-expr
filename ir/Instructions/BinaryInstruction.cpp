@@ -43,22 +43,22 @@ void BinaryInstruction::toString(std::string & str)
         case IRInstOperator::IRINST_OP_ADD_I:
 
             // 加法指令，二元运算
-            str = getIRName() + " = add " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + "= " + src1->getIRName() + " + " + src2->getIRName() + " ;";
             break;
         case IRInstOperator::IRINST_OP_SUB_I:
 
             // 减法指令，二元运算
-            str = getIRName() + " = sub " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + "= " + src1->getIRName() + " - " + src2->getIRName() + " ;";
             break;
         case IRInstOperator::IRINST_OP_MUL_I:
 
             // 乘法指令，二元运算
-            str = getIRName() + " = mul " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + "= " + src1->getIRName() + " * " + src2->getIRName() + " ;";
             break;
         case IRInstOperator::IRINST_OP_DIV_I:
 
             // 除法指令，二元运算
-            str = getIRName() + " = div " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + "= " + src1->getIRName() + " / " + src2->getIRName() + " ;";
             break;
         case IRInstOperator::IRINST_OP_MOD_I:
 
