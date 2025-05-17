@@ -95,6 +95,51 @@ protected:
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_unary_minus(ast_node * node);
 
+    /// @brief 关系运算符大于AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_gt(ast_node * node);
+
+    /// @brief 关系运算符大于等于AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_ge(ast_node * node);
+
+    /// @brief 关系运算符小于AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_lt(ast_node * node);
+
+    /// @brief 关系运算符小于等于AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_le(ast_node * node);
+
+    /// @brief 关系运算符等于AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_eq(ast_node * node);
+
+    /// @brief 关系运算符不等于AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_ne(ast_node * node);
+
+    /// @brief 逻辑运算符与AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_and(ast_node * node);
+
+    /// @brief 逻辑运算符或AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_or(ast_node * node);
+
+    /// @brief 逻辑运算符非AST节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_not(ast_node * node);
+
     /// @brief 赋值AST节点翻译成线性中间IR
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败

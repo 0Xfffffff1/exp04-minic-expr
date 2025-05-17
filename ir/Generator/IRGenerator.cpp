@@ -52,6 +52,19 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     ast2ir_handlers[ast_operator_type::AST_OP_MOD] = &IRGenerator::ir_mod;
     ast2ir_handlers[ast_operator_type::AST_OP_UNARY_MINUS] = &IRGenerator::ir_unary_minus;
 
+    /* 关系运算符 */
+    ast2ir_handlers[ast_operator_type::AST_OP_GT] = &IRGenerator::ir_gt;
+    ast2ir_handlers[ast_operator_type::AST_OP_GE] = &IRGenerator::ir_ge;
+    ast2ir_handlers[ast_operator_type::AST_OP_LT] = &IRGenerator::ir_lt;
+    ast2ir_handlers[ast_operator_type::AST_OP_LE] = &IRGenerator::ir_le;
+    ast2ir_handlers[ast_operator_type::AST_OP_EQ] = &IRGenerator::ir_eq;
+    ast2ir_handlers[ast_operator_type::AST_OP_NEQ] = &IRGenerator::ir_ne;
+
+    /* 逻辑运算符 */
+    ast2ir_handlers[ast_operator_type::AST_OP_LOGICAL_AND] = &IRGenerator::ir_and;
+    ast2ir_handlers[ast_operator_type::AST_OP_LOGICAL_OR] = &IRGenerator::ir_or;
+    ast2ir_handlers[ast_operator_type::AST_OP_LOGICAL_NOT] = &IRGenerator::ir_not;
+
     /* 语句 */
     ast2ir_handlers[ast_operator_type::AST_OP_ASSIGN] = &IRGenerator::ir_assign;
     ast2ir_handlers[ast_operator_type::AST_OP_RETURN] = &IRGenerator::ir_return;
@@ -258,12 +271,34 @@ bool IRGenerator::ir_function_define(ast_node * node)
 /// @return 翻译是否成功，true：成功，false：失败
 bool IRGenerator::ir_function_formal_params(ast_node * node)
 {
-    // TODO 目前形参还不支持，直接返回true
+    if (!node || node->sons.empty()) {
+        return true;
+    }
 
-    // 每个形参变量都创建对应的临时变量，用于表达实参转递的值
-    // 而真实的形参则创建函数内的局部变量。
-    // 然后产生赋值指令，用于把表达实参值的临时变量拷贝到形参局部变量上。
-    // 请注意这些指令要放在Entry指令后面，因此处理的先后上要注意。
+    Function * currentFunc = module->getCurrentFunction();
+    if (!currentFunc) {
+        return false;
+    }
+
+    for (auto param : node->sons) {
+        if (!param || param->sons.size() < 2) {
+            return false;
+        }
+
+        // 获取参数类型和名称
+        Type * paramType = param->sons[0]->type;
+        std::string paramName = param->sons[1]->name;
+
+        // 创建参数变量
+        LocalVariable * paramValue = currentFunc->newLocalVarValue(paramType, paramName);
+        if (!paramValue) {
+            return false;
+        }
+
+        // 创建形式参数
+        FormalParam * formalParam = new FormalParam(paramType, paramName);
+        currentFunc->getParams().push_back(formalParam);
+    }
 
     return true;
 }
@@ -767,7 +802,7 @@ bool IRGenerator::ir_unary_minus(ast_node * node)
     }
 
     // 创建一个常量0
-    auto zero = new ConstInt(0);
+    auto zero = module->newConstInt(0);
 
     // 创建减法指令：0 - operand
     BinaryInstruction * subInst = new BinaryInstruction(module->getCurrentFunction(),
@@ -781,6 +816,334 @@ bool IRGenerator::ir_unary_minus(ast_node * node)
     node->blockInsts.addInst(subInst);
 
     node->val = subInst;
+
+    return true;
+}
+
+/// @brief 关系运算符大于AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_gt(ast_node * node)
+{
+    ast_node * src1_node = node->sons[0];
+    ast_node * src2_node = node->sons[1];
+
+    // 先计算左操作数
+    ast_node * left = ir_visit_ast_node(src1_node);
+    if (!left) {
+        return false;
+    }
+
+    // 再计算右操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        return false;
+    }
+
+    // 创建大于指令
+    BinaryInstruction * gtInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                      IRInstOperator::IRINST_OP_GT_I,
+                                                      left->val,
+                                                      right->val,
+                                                      IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(left->blockInsts);
+    node->blockInsts.addInst(right->blockInsts);
+    node->blockInsts.addInst(gtInst);
+
+    node->val = gtInst;
+
+    return true;
+}
+
+/// @brief 关系运算符大于等于AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_ge(ast_node * node)
+{
+    ast_node * src1_node = node->sons[0];
+    ast_node * src2_node = node->sons[1];
+
+    // 先计算左操作数
+    ast_node * left = ir_visit_ast_node(src1_node);
+    if (!left) {
+        return false;
+    }
+
+    // 再计算右操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        return false;
+    }
+
+    // 创建大于等于指令
+    BinaryInstruction * geInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                      IRInstOperator::IRINST_OP_GE_I,
+                                                      left->val,
+                                                      right->val,
+                                                      IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(left->blockInsts);
+    node->blockInsts.addInst(right->blockInsts);
+    node->blockInsts.addInst(geInst);
+
+    node->val = geInst;
+
+    return true;
+}
+
+/// @brief 关系运算符小于AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_lt(ast_node * node)
+{
+    ast_node * src1_node = node->sons[0];
+    ast_node * src2_node = node->sons[1];
+
+    // 先计算左操作数
+    ast_node * left = ir_visit_ast_node(src1_node);
+    if (!left) {
+        return false;
+    }
+
+    // 再计算右操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        return false;
+    }
+
+    // 创建小于指令
+    BinaryInstruction * ltInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                      IRInstOperator::IRINST_OP_LT_I,
+                                                      left->val,
+                                                      right->val,
+                                                      IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(left->blockInsts);
+    node->blockInsts.addInst(right->blockInsts);
+    node->blockInsts.addInst(ltInst);
+
+    node->val = ltInst;
+
+    return true;
+}
+
+/// @brief 关系运算符小于等于AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_le(ast_node * node)
+{
+    ast_node * src1_node = node->sons[0];
+    ast_node * src2_node = node->sons[1];
+
+    // 先计算左操作数
+    ast_node * left = ir_visit_ast_node(src1_node);
+    if (!left) {
+        return false;
+    }
+
+    // 再计算右操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        return false;
+    }
+
+    // 创建小于等于指令
+    BinaryInstruction * leInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                      IRInstOperator::IRINST_OP_LE_I,
+                                                      left->val,
+                                                      right->val,
+                                                      IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(left->blockInsts);
+    node->blockInsts.addInst(right->blockInsts);
+    node->blockInsts.addInst(leInst);
+
+    node->val = leInst;
+
+    return true;
+}
+
+/// @brief 关系运算符等于AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_eq(ast_node * node)
+{
+    ast_node * src1_node = node->sons[0];
+    ast_node * src2_node = node->sons[1];
+
+    // 先计算左操作数
+    ast_node * left = ir_visit_ast_node(src1_node);
+    if (!left) {
+        return false;
+    }
+
+    // 再计算右操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        return false;
+    }
+
+    // 创建等于指令
+    BinaryInstruction * eqInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                      IRInstOperator::IRINST_OP_EQ_I,
+                                                      left->val,
+                                                      right->val,
+                                                      IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(left->blockInsts);
+    node->blockInsts.addInst(right->blockInsts);
+    node->blockInsts.addInst(eqInst);
+
+    node->val = eqInst;
+
+    return true;
+}
+
+/// @brief 关系运算符不等于AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_ne(ast_node * node)
+{
+    ast_node * src1_node = node->sons[0];
+    ast_node * src2_node = node->sons[1];
+
+    // 先计算左操作数
+    ast_node * left = ir_visit_ast_node(src1_node);
+    if (!left) {
+        return false;
+    }
+
+    // 再计算右操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        return false;
+    }
+
+    // 创建不等于指令
+    BinaryInstruction * neInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                      IRInstOperator::IRINST_OP_NE_I,
+                                                      left->val,
+                                                      right->val,
+                                                      IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(left->blockInsts);
+    node->blockInsts.addInst(right->blockInsts);
+    node->blockInsts.addInst(neInst);
+
+    node->val = neInst;
+
+    return true;
+}
+
+/// @brief 逻辑运算符与AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_and(ast_node * node)
+{
+    ast_node * src1_node = node->sons[0];
+    ast_node * src2_node = node->sons[1];
+
+    // 先计算左操作数
+    ast_node * left = ir_visit_ast_node(src1_node);
+    if (!left) {
+        return false;
+    }
+
+    // 再计算右操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        return false;
+    }
+
+    // 创建逻辑与指令
+    BinaryInstruction * andInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                       IRInstOperator::IRINST_OP_AND_I,
+                                                       left->val,
+                                                       right->val,
+                                                       IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(left->blockInsts);
+    node->blockInsts.addInst(right->blockInsts);
+    node->blockInsts.addInst(andInst);
+
+    node->val = andInst;
+
+    return true;
+}
+
+/// @brief 逻辑运算符或AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_or(ast_node * node)
+{
+    ast_node * src1_node = node->sons[0];
+    ast_node * src2_node = node->sons[1];
+
+    // 先计算左操作数
+    ast_node * left = ir_visit_ast_node(src1_node);
+    if (!left) {
+        return false;
+    }
+
+    // 再计算右操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        return false;
+    }
+
+    // 创建逻辑或指令
+    BinaryInstruction * orInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                      IRInstOperator::IRINST_OP_OR_I,
+                                                      left->val,
+                                                      right->val,
+                                                      IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(left->blockInsts);
+    node->blockInsts.addInst(right->blockInsts);
+    node->blockInsts.addInst(orInst);
+
+    node->val = orInst;
+
+    return true;
+}
+
+/// @brief 逻辑运算符非AST节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_not(ast_node * node)
+{
+    ast_node * operand_node = node->sons[0];
+
+    // 先计算操作数
+    ast_node * operand = ir_visit_ast_node(operand_node);
+    if (!operand) {
+        return false;
+    }
+
+    // 创建一个常量1
+    auto one = module->newConstInt(1);
+
+    // 创建逻辑非指令
+    BinaryInstruction * notInst = new BinaryInstruction(module->getCurrentFunction(),
+                                                       IRInstOperator::IRINST_OP_NOT_I,
+                                                       operand->val,
+                                                       one,
+                                                       IntegerType::getTypeInt());
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    node->blockInsts.addInst(operand->blockInsts);
+    node->blockInsts.addInst(notInst);
+
+    node->val = notInst;
 
     return true;
 }

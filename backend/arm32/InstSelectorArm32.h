@@ -92,6 +92,42 @@ protected:
     /// @param inst IR指令
     void translate_unary_minus(Instruction * inst);
 
+    /// @brief 关系运算符大于指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_gt_int32(Instruction * inst);
+
+    /// @brief 关系运算符大于等于指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_ge_int32(Instruction * inst);
+
+    /// @brief 关系运算符小于指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_lt_int32(Instruction * inst);
+
+    /// @brief 关系运算符小于等于指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_le_int32(Instruction * inst);
+
+    /// @brief 关系运算符等于指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_eq_int32(Instruction * inst);
+
+    /// @brief 关系运算符不等于指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_ne_int32(Instruction * inst);
+
+    /// @brief 逻辑运算符与指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_and_int32(Instruction * inst);
+
+    /// @brief 逻辑运算符或指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_or_int32(Instruction * inst);
+
+    /// @brief 逻辑运算符非指令翻译成ARM32汇编
+    /// @param inst IR指令
+    void translate_not_int32(Instruction * inst);
+
     /// @brief 二元操作指令翻译成ARM32汇编
     /// @param inst IR指令
     /// @param operator_name 操作码

@@ -56,6 +56,21 @@ InstSelectorArm32::InstSelectorArm32(vector<Instruction *> & _irCode,
 
     translator_handlers[IRInstOperator::IRINST_OP_FUNC_CALL] = &InstSelectorArm32::translate_call;
     translator_handlers[IRInstOperator::IRINST_OP_ARG] = &InstSelectorArm32::translate_arg;
+
+    //translator_handlers[IRInstOperator::IRINST_OP_UNARY_MINUS] = &InstSelectorArm32::translate_unary_minus;
+
+    /* 关系运算符 */
+    translator_handlers[IRInstOperator::IRINST_OP_GT_I] = &InstSelectorArm32::translate_gt_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_GE_I] = &InstSelectorArm32::translate_ge_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_LT_I] = &InstSelectorArm32::translate_lt_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_LE_I] = &InstSelectorArm32::translate_le_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_EQ_I] = &InstSelectorArm32::translate_eq_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_NE_I] = &InstSelectorArm32::translate_ne_int32;
+
+    /* 逻辑运算符 */
+    translator_handlers[IRInstOperator::IRINST_OP_AND_I] = &InstSelectorArm32::translate_and_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_OR_I] = &InstSelectorArm32::translate_or_int32;
+    translator_handlers[IRInstOperator::IRINST_OP_NOT_I] = &InstSelectorArm32::translate_not_int32;
 }
 
 ///
@@ -615,4 +630,487 @@ void InstSelectorArm32::translate_arg(Instruction * inst)
     }
 
     realArgCount++;
+}
+
+/// @brief 关系运算符大于指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_gt_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t arg2_reg_no = arg2->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    if (arg2_reg_no == -1) {
+        load_arg2_reg_no = simpleRegisterAllocator.Allocate(arg2);
+        iloc.load_var(load_arg2_reg_no, arg2);
+    } else {
+        load_arg2_reg_no = arg2_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 比较两个操作数
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], PlatformArm32::regName[load_arg2_reg_no]);
+
+    // 如果大于，则设置目标寄存器为1，否则为0
+    iloc.inst("movgt", PlatformArm32::regName[load_result_reg_no], "#1");
+    iloc.inst("movle", PlatformArm32::regName[load_result_reg_no], "#0");
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(result);
+}
+
+/// @brief 关系运算符大于等于指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_ge_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t arg2_reg_no = arg2->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    if (arg2_reg_no == -1) {
+        load_arg2_reg_no = simpleRegisterAllocator.Allocate(arg2);
+        iloc.load_var(load_arg2_reg_no, arg2);
+    } else {
+        load_arg2_reg_no = arg2_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 比较两个操作数
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], PlatformArm32::regName[load_arg2_reg_no]);
+
+    // 如果大于等于，则设置目标寄存器为1，否则为0
+    iloc.inst("movge", PlatformArm32::regName[load_result_reg_no], "#1");
+    iloc.inst("movlt", PlatformArm32::regName[load_result_reg_no], "#0");
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(result);
+}
+
+/// @brief 关系运算符小于指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_lt_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t arg2_reg_no = arg2->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    if (arg2_reg_no == -1) {
+        load_arg2_reg_no = simpleRegisterAllocator.Allocate(arg2);
+        iloc.load_var(load_arg2_reg_no, arg2);
+    } else {
+        load_arg2_reg_no = arg2_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 比较两个操作数
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], PlatformArm32::regName[load_arg2_reg_no]);
+
+    // 如果小于，则设置目标寄存器为1，否则为0
+    iloc.inst("movlt", PlatformArm32::regName[load_result_reg_no], "#1");
+    iloc.inst("movge", PlatformArm32::regName[load_result_reg_no], "#0");
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(result);
+}
+
+/// @brief 关系运算符小于等于指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_le_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t arg2_reg_no = arg2->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    if (arg2_reg_no == -1) {
+        load_arg2_reg_no = simpleRegisterAllocator.Allocate(arg2);
+        iloc.load_var(load_arg2_reg_no, arg2);
+    } else {
+        load_arg2_reg_no = arg2_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 比较两个操作数
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], PlatformArm32::regName[load_arg2_reg_no]);
+
+    // 如果小于等于，则设置目标寄存器为1，否则为0
+    iloc.inst("movle", PlatformArm32::regName[load_result_reg_no], "#1");
+    iloc.inst("movgt", PlatformArm32::regName[load_result_reg_no], "#0");
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(result);
+}
+
+/// @brief 关系运算符等于指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_eq_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t arg2_reg_no = arg2->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    if (arg2_reg_no == -1) {
+        load_arg2_reg_no = simpleRegisterAllocator.Allocate(arg2);
+        iloc.load_var(load_arg2_reg_no, arg2);
+    } else {
+        load_arg2_reg_no = arg2_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 比较两个操作数
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], PlatformArm32::regName[load_arg2_reg_no]);
+
+    // 如果等于，则设置目标寄存器为1，否则为0
+    iloc.inst("moveq", PlatformArm32::regName[load_result_reg_no], "#1");
+    iloc.inst("movne", PlatformArm32::regName[load_result_reg_no], "#0");
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(result);
+}
+
+/// @brief 关系运算符不等于指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_ne_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t arg2_reg_no = arg2->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    if (arg2_reg_no == -1) {
+        load_arg2_reg_no = simpleRegisterAllocator.Allocate(arg2);
+        iloc.load_var(load_arg2_reg_no, arg2);
+    } else {
+        load_arg2_reg_no = arg2_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 比较两个操作数
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], PlatformArm32::regName[load_arg2_reg_no]);
+
+    // 如果不等于，则设置目标寄存器为1，否则为0
+    iloc.inst("movne", PlatformArm32::regName[load_result_reg_no], "#1");
+    iloc.inst("moveq", PlatformArm32::regName[load_result_reg_no], "#0");
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(result);
+}
+
+/// @brief 逻辑运算符与指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_and_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t arg2_reg_no = arg2->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    if (arg2_reg_no == -1) {
+        load_arg2_reg_no = simpleRegisterAllocator.Allocate(arg2);
+        iloc.load_var(load_arg2_reg_no, arg2);
+    } else {
+        load_arg2_reg_no = arg2_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 将操作数转换为布尔值（非零为true，零为false）
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], "#0");
+    iloc.inst("movne", PlatformArm32::regName[load_arg1_reg_no], "#1");
+    iloc.inst("moveq", PlatformArm32::regName[load_arg1_reg_no], "#0");
+
+    iloc.inst("cmp", PlatformArm32::regName[load_arg2_reg_no], "#0");
+    iloc.inst("movne", PlatformArm32::regName[load_arg2_reg_no], "#1");
+    iloc.inst("moveq", PlatformArm32::regName[load_arg2_reg_no], "#0");
+
+    // 执行逻辑与操作
+    iloc.inst("and", PlatformArm32::regName[load_result_reg_no], 
+              PlatformArm32::regName[load_arg1_reg_no], 
+              PlatformArm32::regName[load_arg2_reg_no]);
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(result);
+}
+
+/// @brief 逻辑运算符或指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_or_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t arg2_reg_no = arg2->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    if (arg2_reg_no == -1) {
+        load_arg2_reg_no = simpleRegisterAllocator.Allocate(arg2);
+        iloc.load_var(load_arg2_reg_no, arg2);
+    } else {
+        load_arg2_reg_no = arg2_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 将操作数转换为布尔值（非零为true，零为false）
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], "#0");
+    iloc.inst("movne", PlatformArm32::regName[load_arg1_reg_no], "#1");
+    iloc.inst("moveq", PlatformArm32::regName[load_arg1_reg_no], "#0");
+
+    iloc.inst("cmp", PlatformArm32::regName[load_arg2_reg_no], "#0");
+    iloc.inst("movne", PlatformArm32::regName[load_arg2_reg_no], "#1");
+    iloc.inst("moveq", PlatformArm32::regName[load_arg2_reg_no], "#0");
+
+    // 执行逻辑或操作
+    iloc.inst("orr", PlatformArm32::regName[load_result_reg_no], 
+              PlatformArm32::regName[load_arg1_reg_no], 
+              PlatformArm32::regName[load_arg2_reg_no]);
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(result);
+}
+
+/// @brief 逻辑运算符非指令翻译成ARM32汇编
+/// @param inst IR指令
+void InstSelectorArm32::translate_not_int32(Instruction * inst)
+{
+    Value * result = inst;
+    Value * arg1 = inst->getOperand(0);
+
+    int32_t arg1_reg_no = arg1->getRegId();
+    int32_t result_reg_no = inst->getRegId();
+    int32_t load_result_reg_no, load_arg1_reg_no;
+
+    // 加载操作数到寄存器
+    if (arg1_reg_no == -1) {
+        load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+        iloc.load_var(load_arg1_reg_no, arg1);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+
+    // 为结果分配寄存器
+    if (result_reg_no == -1) {
+        load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    } else {
+        load_result_reg_no = result_reg_no;
+    }
+
+    // 将操作数转换为布尔值（非零为true，零为false）
+    iloc.inst("cmp", PlatformArm32::regName[load_arg1_reg_no], "#0");
+    iloc.inst("movne", PlatformArm32::regName[load_arg1_reg_no], "#1");
+    iloc.inst("moveq", PlatformArm32::regName[load_arg1_reg_no], "#0");
+
+    // 执行逻辑非操作
+    iloc.inst("eor", PlatformArm32::regName[load_result_reg_no], 
+              PlatformArm32::regName[load_arg1_reg_no], "#1");
+
+    // 如果结果不是寄存器变量，需要存回内存
+    if (result_reg_no == -1) {
+        iloc.store_var(load_result_reg_no, result, ARM32_TMP_REG_NO);
+    }
+
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(result);
 }
