@@ -1164,8 +1164,8 @@ bool IRGenerator::ir_if(ast_node * node)
     if (!cond_result) return false;
 
     // 创建标签
-    LabelInstruction * then_label = new LabelInstruction(module->getCurrentFunction(), "then");
-    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), "exit");
+    LabelInstruction * then_label = new LabelInstruction(module->getCurrentFunction(), generateLabelName("then"));
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), generateLabelName("exit"));
 
     // 生成条件跳转指令：如果条件为真，跳转到then标签
     GotoInstruction * cond_jump = new GotoInstruction(module->getCurrentFunction(), then_label, cond_result->val);
@@ -1202,9 +1202,9 @@ bool IRGenerator::ir_if_else(ast_node * node)
     if (!cond_result) return false;
 
     // 创建标签
-    LabelInstruction * then_label = new LabelInstruction(module->getCurrentFunction(), "then");
-    LabelInstruction * else_label = new LabelInstruction(module->getCurrentFunction(), "else");
-    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), "exit");
+    LabelInstruction * then_label = new LabelInstruction(module->getCurrentFunction(), generateLabelName("then"));
+    LabelInstruction * else_label = new LabelInstruction(module->getCurrentFunction(), generateLabelName("else"));
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), generateLabelName("exit"));
 
     // 生成条件跳转指令：如果条件为真，跳转到then标签
     GotoInstruction * cond_jump = new GotoInstruction(module->getCurrentFunction(), then_label, cond_result->val);
@@ -1248,9 +1248,9 @@ bool IRGenerator::ir_while(ast_node * node)
     ast_node * body_node = node->sons[1];
 
     // 创建标签
-    LabelInstruction * cond_label = new LabelInstruction(module->getCurrentFunction(), "while_cond");
-    LabelInstruction * body_label = new LabelInstruction(module->getCurrentFunction(), "while_body");
-    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), "while_exit");
+    LabelInstruction * cond_label = new LabelInstruction(module->getCurrentFunction(), generateLabelName("cond"));
+    LabelInstruction * body_label = new LabelInstruction(module->getCurrentFunction(), generateLabelName("body"));
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), generateLabelName("exit"));
 
     // 保存当前循环的标签，用于break和continue语句
     LabelInstruction * old_continue_label = currentContinueLabel;
@@ -1329,5 +1329,5 @@ bool IRGenerator::ir_continue(ast_node * node)
 }
 std::string IRGenerator::generateLabelName(const std::string & prefix)
 {
-    return prefix + "_" + std::to_string(labelCounter++);
+    return ".L" + std::to_string(labelCounter++);
 }
