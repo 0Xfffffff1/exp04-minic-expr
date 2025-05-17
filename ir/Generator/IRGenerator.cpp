@@ -1056,31 +1056,53 @@ bool IRGenerator::ir_and(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 先计算左操作数
+    // 创建标签
+    LabelInstruction * second_operand_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+    LabelInstruction * true_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+    LabelInstruction * false_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+
+    // 计算第一个操作数
     ast_node * left = ir_visit_ast_node(src1_node);
-    if (!left) {
-        return false;
-    }
-
-    // 再计算右操作数
-    ast_node * right = ir_visit_ast_node(src2_node);
-    if (!right) {
-        return false;
-    }
-
-    // 创建逻辑与指令
-    BinaryInstruction * andInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                       IRInstOperator::IRINST_OP_AND_I,
-                                                       left->val,
-                                                       right->val,
-                                                       IntegerType::getTypeInt());
-
-    // 创建临时变量保存IR的值，以及线性IR指令
+    if (!left) return false;
     node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
-    node->blockInsts.addInst(andInst);
 
-    node->val = andInst;
+    // 如果第一个操作数为真，继续计算第二个操作数
+    GotoInstruction * first_cond_jump = new GotoInstruction(module->getCurrentFunction(), second_operand_label, left->val);
+    node->blockInsts.addInst(first_cond_jump);
+
+    // 如果第一个操作数为假，直接跳转到false_label
+    GotoInstruction * first_false_jump = new GotoInstruction(module->getCurrentFunction(), false_label);
+    node->blockInsts.addInst(first_false_jump);
+
+    // 计算第二个操作数
+    node->blockInsts.addInst(second_operand_label);
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) return false;
+    node->blockInsts.addInst(right->blockInsts);
+
+    // 根据第二个操作数的结果跳转
+    GotoInstruction * second_cond_jump = new GotoInstruction(module->getCurrentFunction(), true_label, right->val);
+    node->blockInsts.addInst(second_cond_jump);
+    GotoInstruction * second_false_jump = new GotoInstruction(module->getCurrentFunction(), false_label);
+    node->blockInsts.addInst(second_false_jump);
+
+    // 真值分支
+    node->blockInsts.addInst(true_label);
+    auto one = module->newConstInt(1);
+    MoveInstruction * true_result = new MoveInstruction(module->getCurrentFunction(), node->val, one);
+    node->blockInsts.addInst(true_result);
+    GotoInstruction * true_exit_jump = new GotoInstruction(module->getCurrentFunction(), exit_label);
+    node->blockInsts.addInst(true_exit_jump);
+
+    // 假值分支
+    node->blockInsts.addInst(false_label);
+    auto zero = module->newConstInt(0);
+    MoveInstruction * false_result = new MoveInstruction(module->getCurrentFunction(), node->val, zero);
+    node->blockInsts.addInst(false_result);
+
+    // 出口标签
+    node->blockInsts.addInst(exit_label);
 
     return true;
 }
@@ -1093,31 +1115,53 @@ bool IRGenerator::ir_or(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 先计算左操作数
+    // 创建标签
+    LabelInstruction * second_operand_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+    LabelInstruction * true_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+    LabelInstruction * false_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+
+    // 计算第一个操作数
     ast_node * left = ir_visit_ast_node(src1_node);
-    if (!left) {
-        return false;
-    }
-
-    // 再计算右操作数
-    ast_node * right = ir_visit_ast_node(src2_node);
-    if (!right) {
-        return false;
-    }
-
-    // 创建逻辑或指令
-    BinaryInstruction * orInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                      IRInstOperator::IRINST_OP_OR_I,
-                                                      left->val,
-                                                      right->val,
-                                                      IntegerType::getTypeInt());
-
-    // 创建临时变量保存IR的值，以及线性IR指令
+    if (!left) return false;
     node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
-    node->blockInsts.addInst(orInst);
 
-    node->val = orInst;
+    // 如果第一个操作数为真，直接跳转到true_label
+    GotoInstruction * first_cond_jump = new GotoInstruction(module->getCurrentFunction(), true_label, left->val);
+    node->blockInsts.addInst(first_cond_jump);
+
+    // 如果第一个操作数为假，继续计算第二个操作数
+    GotoInstruction * first_false_jump = new GotoInstruction(module->getCurrentFunction(), second_operand_label);
+    node->blockInsts.addInst(first_false_jump);
+
+    // 计算第二个操作数
+    node->blockInsts.addInst(second_operand_label);
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) return false;
+    node->blockInsts.addInst(right->blockInsts);
+
+    // 根据第二个操作数的结果跳转
+    GotoInstruction * second_cond_jump = new GotoInstruction(module->getCurrentFunction(), true_label, right->val);
+    node->blockInsts.addInst(second_cond_jump);
+    GotoInstruction * second_false_jump = new GotoInstruction(module->getCurrentFunction(), false_label);
+    node->blockInsts.addInst(second_false_jump);
+
+    // 真值分支
+    node->blockInsts.addInst(true_label);
+    auto one = module->newConstInt(1);
+    MoveInstruction * true_result = new MoveInstruction(module->getCurrentFunction(), node->val, one);
+    node->blockInsts.addInst(true_result);
+    GotoInstruction * true_exit_jump = new GotoInstruction(module->getCurrentFunction(), exit_label);
+    node->blockInsts.addInst(true_exit_jump);
+
+    // 假值分支
+    node->blockInsts.addInst(false_label);
+    auto zero = module->newConstInt(0);
+    MoveInstruction * false_result = new MoveInstruction(module->getCurrentFunction(), node->val, zero);
+    node->blockInsts.addInst(false_result);
+
+    // 出口标签
+    node->blockInsts.addInst(exit_label);
 
     return true;
 }
@@ -1129,30 +1173,42 @@ bool IRGenerator::ir_not(ast_node * node)
 {
     ast_node * operand_node = node->sons[0];
 
-    // 先计算操作数
+    // 创建标签
+    LabelInstruction * true_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+    LabelInstruction * false_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), ".L" + std::to_string(labelCounter++));
+
+    // 计算操作数
     ast_node * operand = ir_visit_ast_node(operand_node);
-    if (!operand) {
-        return false;
-    }
-
-    // 创建一个常量1
-    auto one = module->newConstInt(1);
-
-    // 创建逻辑非指令
-    BinaryInstruction * notInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                       IRInstOperator::IRINST_OP_NOT_I,
-                                                       operand->val,
-                                                       one,
-                                                       IntegerType::getTypeInt());
-
-    // 创建临时变量保存IR的值，以及线性IR指令
+    if (!operand) return false;
     node->blockInsts.addInst(operand->blockInsts);
-    node->blockInsts.addInst(notInst);
 
-    node->val = notInst;
+    // 如果操作数为真，跳转到false_label（注意这里是反转的）
+    GotoInstruction * cond_jump = new GotoInstruction(module->getCurrentFunction(), false_label, operand->val);
+    node->blockInsts.addInst(cond_jump);
+    GotoInstruction * true_jump = new GotoInstruction(module->getCurrentFunction(), true_label);
+    node->blockInsts.addInst(true_jump);
+
+    // 真值分支（原操作数为假时）
+    node->blockInsts.addInst(true_label);
+    auto one = module->newConstInt(1);
+    MoveInstruction * true_result = new MoveInstruction(module->getCurrentFunction(), node->val, one);
+    node->blockInsts.addInst(true_result);
+    GotoInstruction * true_exit_jump = new GotoInstruction(module->getCurrentFunction(), exit_label);
+    node->blockInsts.addInst(true_exit_jump);
+
+    // 假值分支（原操作数为真时）
+    node->blockInsts.addInst(false_label);
+    auto zero = module->newConstInt(0);
+    MoveInstruction * false_result = new MoveInstruction(module->getCurrentFunction(), node->val, zero);
+    node->blockInsts.addInst(false_result);
+
+    // 出口标签
+    node->blockInsts.addInst(exit_label);
 
     return true;
 }
+
 bool IRGenerator::ir_if(ast_node * node)
 {
     // if语句有两个子节点：条件表达式和then分支
@@ -1327,6 +1383,7 @@ bool IRGenerator::ir_continue(ast_node * node)
 
     return true;
 }
+
 std::string IRGenerator::generateLabelName(const std::string & prefix)
 {
     return ".L" + std::to_string(labelCounter++);
