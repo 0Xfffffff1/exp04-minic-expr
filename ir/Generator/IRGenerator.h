@@ -23,7 +23,8 @@
 #include "Value.h"
 #include "Instructions/BinaryInstruction.h"
 #include "Values/ConstInt.h"
-
+#include "Instructions/LabelInstruction.h"
+class LabelInstruction;
 /// @brief AST遍历产生线性IR类
 class IRGenerator {
 
@@ -180,6 +181,31 @@ protected:
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_variable_declare(ast_node * node);
 
+    /// @brief if语句节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_if(ast_node * node);
+
+    /// @brief if-else语句节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_if_else(ast_node * node);
+
+    /// @brief while语句节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_while(ast_node * node);
+
+    /// @brief break语句节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_break(ast_node * node);
+
+    /// @brief continue语句节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_continue(ast_node * node);
+
     /// @brief 未知节点类型的节点处理
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败
@@ -202,4 +228,18 @@ private:
 
     /// @brief 符号表:模块
     Module * module;
+
+    /// @brief 当前循环的continue标签
+    LabelInstruction * currentContinueLabel = nullptr;
+
+    /// @brief 当前循环的break标签
+    LabelInstruction * currentBreakLabel = nullptr;
+
+    /// @brief 标签计数器，用于生成唯一的标签名
+    int labelCounter = 0;
+
+    /// @brief 生成唯一的标签名
+    /// @param prefix 标签前缀
+    /// @return 唯一的标签名
+    std::string generateLabelName(const std::string & prefix);
 };

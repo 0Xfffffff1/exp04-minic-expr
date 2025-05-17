@@ -26,14 +26,13 @@
 #include "IRCode.h"
 #include "IRGenerator.h"
 #include "Module.h"
-#include "EntryInstruction.h"
-#include "LabelInstruction.h"
-#include "ExitInstruction.h"
-#include "FuncCallInstruction.h"
-#include "BinaryInstruction.h"
-#include "MoveInstruction.h"
-#include "GotoInstruction.h"
-
+#include "Instructions/EntryInstruction.h"
+#include "Instructions/LabelInstruction.h"
+#include "Instructions/ExitInstruction.h"
+#include "Instructions/FuncCallInstruction.h"
+#include "Instructions/BinaryInstruction.h"
+#include "Instructions/MoveInstruction.h"
+#include "Instructions/GotoInstruction.h"
 /// @brief 构造函数
 /// @param _root AST的根
 /// @param _module 符号表
@@ -82,6 +81,13 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
 
     /* 语句块 */
     ast2ir_handlers[ast_operator_type::AST_OP_BLOCK] = &IRGenerator::ir_block;
+
+    /* 控制流语句 */
+    ast2ir_handlers[ast_operator_type::AST_OP_IF] = &IRGenerator::ir_if;
+    ast2ir_handlers[ast_operator_type::AST_OP_IF_ELSE] = &IRGenerator::ir_if_else;
+    ast2ir_handlers[ast_operator_type::AST_OP_WHILE] = &IRGenerator::ir_while;
+    ast2ir_handlers[ast_operator_type::AST_OP_BREAK] = &IRGenerator::ir_break;
+    ast2ir_handlers[ast_operator_type::AST_OP_CONTINUE] = &IRGenerator::ir_continue;
 
     /* 编译单元 */
     ast2ir_handlers[ast_operator_type::AST_OP_COMPILE_UNIT] = &IRGenerator::ir_compile_unit;
@@ -700,7 +706,7 @@ bool IRGenerator::ir_return(ast_node * node)
     }
 
     // 跳转到函数的尾部出口指令上
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, currentFunc->getExitLabel()));
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, static_cast<LabelInstruction*>(currentFunc->getExitLabel())));
 
     return true;
 }
@@ -1146,4 +1152,182 @@ bool IRGenerator::ir_not(ast_node * node)
     node->val = notInst;
 
     return true;
+}
+bool IRGenerator::ir_if(ast_node * node)
+{
+    // if语句有两个子节点：条件表达式和then分支
+    ast_node * cond_node = node->sons[0];
+    ast_node * then_node = node->sons[1];
+
+    // 生成条件表达式的代码
+    ast_node * cond_result = ir_visit_ast_node(cond_node);
+    if (!cond_result) return false;
+
+    // 创建标签
+    LabelInstruction * then_label = new LabelInstruction(module->getCurrentFunction(), "then");
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), "exit");
+
+    // 生成条件跳转指令：如果条件为真，跳转到then标签
+    GotoInstruction * cond_jump = new GotoInstruction(module->getCurrentFunction(), then_label, cond_result->val);
+    node->blockInsts.addInst(cond_result->blockInsts);
+    node->blockInsts.addInst(cond_jump);
+
+    // 生成跳转到出口的指令
+    GotoInstruction * exit_jump = new GotoInstruction(module->getCurrentFunction(), exit_label);
+    node->blockInsts.addInst(exit_jump);
+
+    // 插入then标签
+    node->blockInsts.addInst(then_label);
+
+    // 生成then分支的代码
+    ast_node * then_result = ir_visit_ast_node(then_node);
+    if (!then_result) return false;
+    node->blockInsts.addInst(then_result->blockInsts);
+
+    // 插入出口标签
+    node->blockInsts.addInst(exit_label);
+
+    return true;
+}
+
+bool IRGenerator::ir_if_else(ast_node * node)
+{
+    // if-else语句有三个子节点：条件表达式、then分支和else分支
+    ast_node * cond_node = node->sons[0];
+    ast_node * then_node = node->sons[1];
+    ast_node * else_node = node->sons[2];
+
+    // 生成条件表达式的代码
+    ast_node * cond_result = ir_visit_ast_node(cond_node);
+    if (!cond_result) return false;
+
+    // 创建标签
+    LabelInstruction * then_label = new LabelInstruction(module->getCurrentFunction(), "then");
+    LabelInstruction * else_label = new LabelInstruction(module->getCurrentFunction(), "else");
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), "exit");
+
+    // 生成条件跳转指令：如果条件为真，跳转到then标签
+    GotoInstruction * cond_jump = new GotoInstruction(module->getCurrentFunction(), then_label, cond_result->val);
+    node->blockInsts.addInst(cond_result->blockInsts);
+    node->blockInsts.addInst(cond_jump);
+
+    // 生成跳转到else标签的指令
+    GotoInstruction * else_jump = new GotoInstruction(module->getCurrentFunction(), else_label);
+    node->blockInsts.addInst(else_jump);
+
+    // 插入then标签
+    node->blockInsts.addInst(then_label);
+
+    // 生成then分支的代码
+    ast_node * then_result = ir_visit_ast_node(then_node);
+    if (!then_result) return false;
+    node->blockInsts.addInst(then_result->blockInsts);
+
+    // 生成跳转到出口的指令
+    GotoInstruction * exit_jump = new GotoInstruction(module->getCurrentFunction(), exit_label);
+    node->blockInsts.addInst(exit_jump);
+
+    // 插入else标签
+    node->blockInsts.addInst(else_label);
+
+    // 生成else分支的代码
+    ast_node * else_result = ir_visit_ast_node(else_node);
+    if (!else_result) return false;
+    node->blockInsts.addInst(else_result->blockInsts);
+
+    // 插入出口标签
+    node->blockInsts.addInst(exit_label);
+
+    return true;
+}
+
+bool IRGenerator::ir_while(ast_node * node)
+{
+    // while语句有两个子节点：条件表达式和循环体
+    ast_node * cond_node = node->sons[0];
+    ast_node * body_node = node->sons[1];
+
+    // 创建标签
+    LabelInstruction * cond_label = new LabelInstruction(module->getCurrentFunction(), "while_cond");
+    LabelInstruction * body_label = new LabelInstruction(module->getCurrentFunction(), "while_body");
+    LabelInstruction * exit_label = new LabelInstruction(module->getCurrentFunction(), "while_exit");
+
+    // 保存当前循环的标签，用于break和continue语句
+    LabelInstruction * old_continue_label = currentContinueLabel;
+    LabelInstruction * old_break_label = currentBreakLabel;
+    currentContinueLabel = cond_label;
+    currentBreakLabel = exit_label;
+
+    // 插入条件标签
+    node->blockInsts.addInst(cond_label);
+
+    // 生成条件表达式的代码
+    ast_node * cond_result = ir_visit_ast_node(cond_node);
+    if (!cond_result) return false;
+    node->blockInsts.addInst(cond_result->blockInsts);
+
+    // 生成条件跳转指令：如果条件为真，跳转到循环体标签
+    GotoInstruction * cond_jump = new GotoInstruction(module->getCurrentFunction(), body_label, cond_result->val);
+    node->blockInsts.addInst(cond_jump);
+
+    // 生成跳转到出口的指令
+    GotoInstruction * exit_jump = new GotoInstruction(module->getCurrentFunction(), exit_label);
+    node->blockInsts.addInst(exit_jump);
+
+    // 插入循环体标签
+    node->blockInsts.addInst(body_label);
+
+    // 生成循环体的代码
+    ast_node * body_result = ir_visit_ast_node(body_node);
+    if (!body_result) return false;
+    node->blockInsts.addInst(body_result->blockInsts);
+
+    // 生成跳转回条件的指令
+    GotoInstruction * back_jump = new GotoInstruction(module->getCurrentFunction(), cond_label);
+    node->blockInsts.addInst(back_jump);
+
+    // 插入出口标签
+    node->blockInsts.addInst(exit_label);
+
+    // 恢复之前的break和continue标签
+    currentContinueLabel = old_continue_label;
+    currentBreakLabel = old_break_label;
+
+    return true;
+}
+
+bool IRGenerator::ir_break(ast_node * node)
+{
+    // 获取当前循环的break标签
+    if (!currentBreakLabel) {
+        // 如果不在循环中，报错
+        std::cerr << "Error: break statement not in loop" << std::endl;
+        return false;
+    }
+
+    // 生成跳转到break标签的指令
+    GotoInstruction * break_jump = new GotoInstruction(module->getCurrentFunction(), currentBreakLabel);
+    node->blockInsts.addInst(break_jump);
+
+    return true;
+}
+
+bool IRGenerator::ir_continue(ast_node * node)
+{
+    // 获取当前循环的continue标签
+    if (!currentContinueLabel) {
+        // 如果不在循环中，报错
+        std::cerr << "Error: continue statement not in loop" << std::endl;
+        return false;
+    }
+
+    // 生成跳转到continue标签的指令
+    GotoInstruction * continue_jump = new GotoInstruction(module->getCurrentFunction(), currentContinueLabel);
+    node->blockInsts.addInst(continue_jump);
+
+    return true;
+}
+std::string IRGenerator::generateLabelName(const std::string & prefix)
+{
+    return prefix + "_" + std::to_string(labelCounter++);
 }

@@ -24,7 +24,8 @@
 #include "LocalVariable.h"
 #include "MemVariable.h"
 #include "IRCode.h"
-
+#include "Instructions/LabelInstruction.h"
+class LabelInstruction;
 ///
 /// @brief 描述函数信息的类，是全局静态存储，其Value的类型为FunctionType
 ///
@@ -170,6 +171,22 @@ public:
     ///
     void realArgCountReset();
 
+    /// @brief 获取当前循环的continue标签
+    /// @return continue标签
+    LabelInstruction * getContinueLabel() { return continueLabel; }
+
+    /// @brief 设置当前循环的continue标签
+    /// @param label continue标签
+    void setContinueLabel(LabelInstruction * label) { continueLabel = label; }
+
+    /// @brief 获取当前循环的break标签
+    /// @return break标签
+    LabelInstruction * getBreakLabel() { return breakLabel; }
+
+    /// @brief 设置当前循环的break标签
+    /// @param label break标签
+    void setBreakLabel(LabelInstruction * label) { breakLabel = label; }
+
 private:
     ///
     /// @brief 函数的返回值类型，有点冗余，可删除，直接从type中取得即可
@@ -197,7 +214,7 @@ private:
     std::vector<LocalVariable *> varsVector;
 
     ///
-    /// @brief 内存型Value
+    /// @brief 内存型Value的向量表，可能重名，请注意
     ///
     std::vector<MemVariable *> memVector;
 
@@ -250,4 +267,10 @@ private:
     /// @brief 累计的实参个数，用于ARG指令的统计
     ///
     int32_t realArgCount = 0;
+
+    /// @brief 当前循环的continue标签
+    LabelInstruction * continueLabel = nullptr;
+
+    /// @brief 当前循环的break标签
+    LabelInstruction * breakLabel = nullptr;
 };

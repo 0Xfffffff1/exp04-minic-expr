@@ -1,19 +1,3 @@
-///
-/// @file LabelInstruction.h
-/// @brief Label指令
-///
-/// @author zenglj (zenglj@live.com)
-/// @version 1.0
-/// @date 2024-09-29
-///
-/// @copyright Copyright (c) 2024
-///
-/// @par 修改日志:
-/// <table>
-/// <tr><th>Date       <th>Version <th>Author  <th>Description
-/// <tr><td>2024-09-29 <td>1.0     <td>zenglj  <td>新建
-/// </table>
-///
 #pragma once
 
 #include <string>
@@ -31,12 +15,31 @@ public:
     ///
     /// @brief 构造函数
     /// @param _func 所属函数
+    /// @param _name 标签名称（可选）
     ///
-    explicit LabelInstruction(Function * _func);
+    explicit LabelInstruction(Function * _func, const std::string & _name = "");
 
     ///
     /// @brief 转换成字符串
     /// @param str 返回指令字符串
     ///
     void toString(std::string & str) override;
+
+    ///
+    /// @brief 获取标签名称
+    /// @return 标签名称
+    ///
+    [[nodiscard]] std::string getName() const override { return name; }
+
+    ///
+    /// @brief 获取标签名称引用
+    /// @return 标签名称引用
+    ///
+    [[nodiscard]] const std::string & getLabelName() const { return name; }
+
+private:
+    ///
+    /// @brief 标签名称
+    ///
+    std::string name;
 };

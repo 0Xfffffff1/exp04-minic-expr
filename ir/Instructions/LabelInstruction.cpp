@@ -14,20 +14,24 @@
 /// </table>
 ///
 #include "VoidType.h"
-
 #include "LabelInstruction.h"
 
 ///
 /// @brief 构造函数
 /// @param _func 所属函数
+/// @param _name 标签名称（可选）
 ///
-LabelInstruction::LabelInstruction(Function * _func)
-    : Instruction(_func, IRInstOperator::IRINST_OP_LABEL, VoidType::getType())
+LabelInstruction::LabelInstruction(Function * _func, const std::string & _name)
+    : Instruction(_func, IRInstOperator::IRINST_OP_LABEL, VoidType::getType()), name(_name)
 {}
 
 /// @brief 转换成字符串
 /// @param str 返回指令字符串
 void LabelInstruction::toString(std::string & str)
 {
-    str = IRName + ":";
+    if (!name.empty()) {
+        str = name + ":";
+    } else {
+        str = IRName + ":";
+    }
 }

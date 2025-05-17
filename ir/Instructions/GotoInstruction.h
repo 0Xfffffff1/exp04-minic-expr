@@ -1,19 +1,3 @@
-///
-/// @file GotoInstruction.h
-/// @brief 无条件跳转指令即goto指令
-///
-/// @author zenglj (zenglj@live.com)
-/// @version 1.0
-/// @date 2024-09-29
-///
-/// @copyright Copyright (c) 2024
-///
-/// @par 修改日志:
-/// <table>
-/// <tr><th>Date       <th>Version <th>Author  <th>Description
-/// <tr><td>2024-09-29 <td>1.0     <td>zenglj  <td>新建
-/// </table>
-///
 #pragma once
 
 #include <string>
@@ -30,9 +14,11 @@ class GotoInstruction final : public Instruction {
 public:
     ///
     /// @brief 无条件跳转指令的构造函数
-    /// @param target 跳转目标
+    /// @param _func 所属函数
+    /// @param _target 跳转目标
+    /// @param _condition 跳转条件（可选）
     ///
-    GotoInstruction(Function * _func, Instruction * _target);
+    GotoInstruction(Function * _func, LabelInstruction * _target, Value * _condition = nullptr);
 
     /// @brief 转换成字符串
     void toString(std::string & str) override;
@@ -41,11 +27,22 @@ public:
     /// @brief 获取目标Label指令
     /// @return LabelInstruction*
     ///
-    [[nodiscard]] LabelInstruction * getTarget() const;
+    [[nodiscard]] LabelInstruction * getTarget() const { return target; }
+
+    ///
+    /// @brief 获取跳转条件
+    /// @return Value*
+    ///
+    [[nodiscard]] Value * getCondition() const { return condition; }
 
 private:
     ///
     /// @brief 跳转到的目标Label指令
     ///
     LabelInstruction * target;
+
+    ///
+    /// @brief 跳转条件
+    ///
+    Value * condition;
 };
