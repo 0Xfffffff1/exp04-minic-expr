@@ -25,15 +25,15 @@ GotoInstruction::GotoInstruction(Function* _func, LabelInstruction* _target,
 void GotoInstruction::toString(std::string& str) {
     if (condition) {
         if (false_target) {
-            str = "bc " + condition->getName() + 
-                  ",label " + target->getName() + 
-                  ",label " + false_target->getName();
+            str = "br i1 " + condition->getName() + 
+                  ", label %" + target->getName() + 
+                  ", label %" + false_target->getName();
         } else {
-            str = "bc " + condition->getName() + 
-                  ",label " + target->getName() + 
-                  ",label next";
+            str = "br i1 " + condition->getName() + 
+                  ", label %" + target->getName() + 
+                  ", label %next";
         }
     } else {
-        str = "br label " + target->getName() + " ;";
+        str = "br label %" + target->getName();
     }
 }

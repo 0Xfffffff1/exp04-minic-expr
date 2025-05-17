@@ -41,5 +41,6 @@ std::string ICmpInstruction::getPredicateString(Predicate pred) {
 ///
 void ICmpInstruction::toString(std::string& str) {
     str = getName() + " = icmp " + getPredicateString(pred) + " " +
-          lhs->getName() + ", " + rhs->getName() + " ;";
+          lhs->getType()->toString() + " " +
+          lhs->getName() + ", " + rhs->getName();
 }
