@@ -17,7 +17,7 @@ public:
     T_MOD = 12, T_LT = 13, T_GT = 14, T_LE = 15, T_GE = 16, T_EQ = 17, T_NEQ = 18, 
     T_AND = 19, T_OR = 20, T_NOT = 21, T_RETURN = 22, T_INT = 23, T_VOID = 24, 
     T_IF = 25, T_ELSE = 26, T_WHILE = 27, T_BREAK = 28, T_CONTINUE = 29, 
-    T_ID = 30, T_DIGIT = 31, WS = 32
+    T_ID = 30, T_DIGIT = 31, WS = 32, COMMENT = 33
   };
 
   enum {

@@ -141,3 +141,4 @@ T_DIGIT:
 
 /* 空白符丢弃 */
 WS: [ \r\n\t]+ -> skip;
+COMMENT: '//' ~[\r\n]* -> skip;

@@ -30,6 +30,7 @@ T_CONTINUE=29
 T_ID=30
 T_DIGIT=31
 WS=32
+COMMENT=33
 '('=1
 ')'=2
 ';'=3
