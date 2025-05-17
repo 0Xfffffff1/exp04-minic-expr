@@ -169,6 +169,14 @@ std::any MiniCCSTVisitor::visitStatement(MiniCParser::StatementContext * ctx)
         return visitBlockStatement(blockCtx);
     } else if (Instanceof(exprCtx, MiniCParser::ExpressionStatementContext *, ctx)) {
         return visitExpressionStatement(exprCtx);
+    } else if (Instanceof(ifCtx, MiniCParser::IfStatementContext *, ctx)) {
+        return visitIfStatement(ifCtx);
+    } else if (Instanceof(whileCtx, MiniCParser::WhileStatementContext *, ctx)) {
+        return visitWhileStatement(whileCtx);
+    } else if (Instanceof(breakCtx, MiniCParser::BreakStatementContext *, ctx)) {
+        return visitBreakStatement(breakCtx);
+    } else if (Instanceof(continueCtx, MiniCParser::ContinueStatementContext *, ctx)) {
+        return visitContinueStatement(continueCtx);
     }
 
     return nullptr;
@@ -612,4 +620,62 @@ std::any MiniCCSTVisitor::visitExpressionStatement(MiniCParser::ExpressionStatem
         // 直接返回空指针，需要再把语句加入到语句块时要注意判断，空语句不要加入
         return nullptr;
     }
+}
+
+std::any MiniCCSTVisitor::visitIfStatement(MiniCParser::IfStatementContext * ctx)
+{
+    // 识别的文法产生式：T_IF T_L_PAREN expr T_R_PAREN statement (T_ELSE statement)?
+    
+    // 获取条件表达式
+    auto condNode = std::any_cast<ast_node *>(visitExpr(ctx->expr()));
+    
+    // 获取if分支语句
+    auto thenNode = std::any_cast<ast_node *>(visitStatement(ctx->statement(0)));
+    
+    if (ctx->T_ELSE()) {
+        // 如果有else分支
+        auto elseNode = std::any_cast<ast_node *>(visitStatement(ctx->statement(1)));
+        
+        // 创建if-else节点
+        auto ifElseNode = create_contain_node(ast_operator_type::AST_OP_IF_ELSE);
+        (void)ifElseNode->insert_son_node(condNode);  // 第一个孩子是条件
+        (void)ifElseNode->insert_son_node(thenNode);  // 第二个孩子是then分支
+        (void)ifElseNode->insert_son_node(elseNode);  // 第三个孩子是else分支
+        return ifElseNode;
+    } else {
+        // 只有if分支
+        auto ifNode = create_contain_node(ast_operator_type::AST_OP_IF);
+        (void)ifNode->insert_son_node(condNode);  // 第一个孩子是条件
+        (void)ifNode->insert_son_node(thenNode);  // 第二个孩子是then分支
+        return ifNode;
+    }
+}
+
+std::any MiniCCSTVisitor::visitWhileStatement(MiniCParser::WhileStatementContext * ctx)
+{
+    // 识别的文法产生式：T_WHILE T_L_PAREN expr T_R_PAREN statement
+    
+    // 获取循环条件表达式
+    auto condNode = std::any_cast<ast_node *>(visitExpr(ctx->expr()));
+    
+    // 获取循环体语句
+    auto bodyNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()));
+    
+    // 创建while节点
+    auto whileNode = create_contain_node(ast_operator_type::AST_OP_WHILE);
+    (void)whileNode->insert_son_node(condNode);  // 第一个孩子是条件
+    (void)whileNode->insert_son_node(bodyNode);  // 第二个孩子是循环体
+    return whileNode;
+}
+
+std::any MiniCCSTVisitor::visitBreakStatement(MiniCParser::BreakStatementContext * ctx)
+{
+    // 识别的文法产生式：T_BREAK T_SEMICOLON
+    return create_contain_node(ast_operator_type::AST_OP_BREAK);
+}
+
+std::any MiniCCSTVisitor::visitContinueStatement(MiniCParser::ContinueStatementContext * ctx)
+{
+    // 识别的文法产生式：T_CONTINUE T_SEMICOLON
+    return create_contain_node(ast_operator_type::AST_OP_CONTINUE);
 }

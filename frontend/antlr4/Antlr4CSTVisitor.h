@@ -209,4 +209,32 @@ protected:
     /// @return std::any AST的节点
     ///
     std::any visitRelationalExp(MiniCParser::RelationalExpContext * ctx) override;
+
+    ///
+    /// @brief 非终结符IfStatement的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    ///
+    std::any visitIfStatement(MiniCParser::IfStatementContext * ctx) override;
+
+    ///
+    /// @brief 非终结符WhileStatement的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    ///
+    std::any visitWhileStatement(MiniCParser::WhileStatementContext * ctx) override;
+
+    ///
+    /// @brief 非终结符BreakStatement的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    ///
+    std::any visitBreakStatement(MiniCParser::BreakStatementContext * ctx) override;
+
+    ///
+    /// @brief 非终结符ContinueStatement的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    ///
+    std::any visitContinueStatement(MiniCParser::ContinueStatementContext * ctx) override;
 };

@@ -16,7 +16,8 @@ public:
     T_ASSIGN = 6, T_COMMA = 7, T_ADD = 8, T_SUB = 9, T_MUL = 10, T_DIV = 11, 
     T_MOD = 12, T_LT = 13, T_GT = 14, T_LE = 15, T_GE = 16, T_EQ = 17, T_NEQ = 18, 
     T_AND = 19, T_OR = 20, T_NOT = 21, T_RETURN = 22, T_INT = 23, T_VOID = 24, 
-    T_ID = 25, T_DIGIT = 26, WS = 27
+    T_IF = 25, T_ELSE = 26, T_WHILE = 27, T_BREAK = 28, T_CONTINUE = 29, 
+    T_ID = 30, T_DIGIT = 31, WS = 32
   };
 
   enum {
@@ -203,6 +204,19 @@ public:
    
   };
 
+  class  WhileStatementContext : public StatementContext {
+  public:
+    WhileStatementContext(StatementContext *ctx);
+
+    antlr4::tree::TerminalNode *T_WHILE();
+    antlr4::tree::TerminalNode *T_L_PAREN();
+    ExprContext *expr();
+    antlr4::tree::TerminalNode *T_R_PAREN();
+    StatementContext *statement();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
   class  BlockStatementContext : public StatementContext {
   public:
     BlockStatementContext(StatementContext *ctx);
@@ -224,12 +238,32 @@ public:
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
+  class  BreakStatementContext : public StatementContext {
+  public:
+    BreakStatementContext(StatementContext *ctx);
+
+    antlr4::tree::TerminalNode *T_BREAK();
+    antlr4::tree::TerminalNode *T_SEMICOLON();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
   class  ExpressionStatementContext : public StatementContext {
   public:
     ExpressionStatementContext(StatementContext *ctx);
 
     antlr4::tree::TerminalNode *T_SEMICOLON();
     ExprContext *expr();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  ContinueStatementContext : public StatementContext {
+  public:
+    ContinueStatementContext(StatementContext *ctx);
+
+    antlr4::tree::TerminalNode *T_CONTINUE();
+    antlr4::tree::TerminalNode *T_SEMICOLON();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
@@ -241,6 +275,21 @@ public:
     antlr4::tree::TerminalNode *T_RETURN();
     ExprContext *expr();
     antlr4::tree::TerminalNode *T_SEMICOLON();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  IfStatementContext : public StatementContext {
+  public:
+    IfStatementContext(StatementContext *ctx);
+
+    antlr4::tree::TerminalNode *T_IF();
+    antlr4::tree::TerminalNode *T_L_PAREN();
+    ExprContext *expr();
+    antlr4::tree::TerminalNode *T_R_PAREN();
+    std::vector<StatementContext *> statement();
+    StatementContext* statement(size_t i);
+    antlr4::tree::TerminalNode *T_ELSE();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
